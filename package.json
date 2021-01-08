@@ -1,6 +1,6 @@
 {
   "name": "markdown-link-check",
-  "version": "3.8.0",
+  "version": "3.8.5",
   "description": "checks the all of the hyperlinks in a markdown text to determine if they are alive or dead",
   "bin": {
     "markdown-link-check": "markdown-link-check"
@@ -29,21 +29,24 @@
     "url": "https://github.com/tcort/markdown-link-check/issues"
   },
   "homepage": "https://github.com/tcort/markdown-link-check#readme",
+  "files": [
+    "markdown-link-check"
+  ],
   "dependencies": {
-    "async": "^3.1.0",
-    "chalk": "^2.4.2",
-    "commander": "^3.0.2",
-    "link-check": "^4.4.6",
-    "markdown-link-extractor": "^1.2.2",
+    "async": "^3.2.0",
+    "chalk": "^4.1.0",
+    "commander": "^6.2.0",
+    "link-check": "^4.5.4",
+    "lodash": "^4.17.20",
     "marked": "^0.7.0",
-    "request": "^2.88.0",
-    "lodash": "^4.17.15",
-    "progress": "^2.0.3"
+    "markdown-link-extractor": "^1.2.6",
+    "progress": "^2.0.3",
+    "request": "^2.88.2"
   },
   "devDependencies": {
     "expect.js": "^0.3.1",
-    "mocha": "^6.2.1",
-    "jshint": "^2.10.2",
+    "mocha": "^8.2.1",
+    "jshint": "^2.12.0",
     "express": "^4.17.1"
   },
   "jshintConfig": {

@@ -21,11 +21,19 @@ const opts = {};
 let filenameForOutput = '';
 let stream = process.stdin; // read from stdin unless a filename is given
 
+function commaSeparatedCodesList(value, dummyPrevious) {
+    return value.split(',').map(function(item) {
+      return parseInt(item, 10);
+    });
+}
+
 program
     .option('-p, --progress', 'show progress bar')
     .option('-c, --config [config]', 'apply a config file (JSON), holding e.g. url specific header configuration')
     .option('-q, --quiet', 'displays errors only')
     .option('-v, --verbose', 'displays detailed error information')
+    .option('-a, --alive <code>', 'comma separated list of HTTP codes to be considered as alive', commaSeparatedCodesList)
+    .option('-r, --retry', 'retry after the duration indicated in \'retry-after\' header when HTTP code is 429')
     .arguments('[filenameOrUrl]')
     .action(function (filenameOrUrl) {
     filenameForOutput = filenameOrUrl;
@@ -56,7 +64,7 @@ program
     } else {
         fs.stat(filenameOrUrl, function(error , stats){
             if (!error && stats.isDirectory()){
-                console.error(chalk.red('\nERROR: ' + filenameOrUrl + ' is a directory! Please provide a vaild filename as an argument.'));
+                console.error(chalk.red('\nERROR: ' + filenameOrUrl + ' is a directory! Please provide a valid filename as an argument.'));
                 process.exit(1);
             }
         });
@@ -69,6 +77,10 @@ program
 opts.showProgressBar = (program.progress === true); // force true or undefined to be true or false.
 opts.quiet = (program.quiet === true);
 opts.verbose = (program.verbose === true);
+opts.retryOn429 = (program.retry === true);
+opts.aliveStatusCodes = program.alive;
+// set the projectBaseUrl to the current working directory, so that `{{BASEURL}}` can be resolved to the project root.
+opts.projectBaseUrl = `file://${process.cwd()}`;
 
 let markdown = ''; // collect the markdown data, then process it
 
@@ -78,7 +90,7 @@ stream
   })
   .on('error', function(error) {
     if (error.code === 'ENOENT') {
-      console.error(chalk.red('\nERROR: File not found! Please provide a vaild filename as an argument.'));
+      console.error(chalk.red('\nERROR: File not found! Please provide a valid filename as an argument.'));
     } else {
       console.error(chalk.red(error));
     }
@@ -103,7 +115,12 @@ stream
                     opts.ignorePatterns = config.ignorePatterns;
                     opts.replacementPatterns = config.replacementPatterns;
                     opts.httpHeaders = config.httpHeaders;
+                    opts.timeout = config.timeout;
                     opts.ignoreDisable = config.ignoreDisable;
+                    opts.retryOn429 = config.retryOn429;
+                    opts.retryCount = config.retryCount;
+                    opts.fallbackRetryDelay = config.fallbackRetryDelay;
+                    opts.aliveStatusCodes = config.aliveStatusCodes;
 
                     runMarkdownLinkCheck(markdown, opts);
                 });

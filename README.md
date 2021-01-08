@@ -1,3 +1,5 @@
+![Test library workflow status](https://github.com/tcort/markdown-link-check/workflows/Test%20library/badge.svg)
+
 # markdown-link-check
 
 Extracts links from markdown texts and checks whether each link is
@@ -8,23 +10,37 @@ alive (`200 OK`) or dead. `mailto:` links are validated with
 
 To add the module to your project, run:
 
-    npm install --save-dev markdown-link-check
+```shell
+npm install --save-dev markdown-link-check
+```
 
 To install the command line tool globally, run:
 
-    npm install -g markdown-link-check
+```shell
+npm install -g markdown-link-check
+```
 
 ---
 
 ## Run using Docker
 
-Build a Docker image:
+Docker images are built with each release. Use the `stable` tag for the current stable release.
 
-    docker build --tag markdown-link-check .
+Add current directory with your `README.md` file as read only volume to `docker run`:
 
-Pipe your `README.md` file to `docker run`:
+```shell
+docker run -v ${PWD}:/tmp:ro --rm -i ghcr.io/tcort/markdown-link-check:stable /tmp/README.md
+```
 
-    docker run --rm -i markdown-link-check < README.md
+Alternatively, if you wish to target a specific release, images are tagged with semantic versions (i.e. `3`, `3.8`, `3.8.3`)
+
+## Run in a GitHub action
+
+Please head on to [github-action-markdown-link-check](https://github.com/gaurav-nelson/github-action-markdown-link-check).
+
+## Run in other tools
+
+- [Mega-Linter](https://nvuillam.github.io/mega-linter/): Linters aggregator [including markdown-link-check](https://nvuillam.github.io/mega-linter/descriptors/markdown_markdown_link_check/)
 
 ## API
 
@@ -40,10 +56,17 @@ Parameters:
 * `opts` optional options object containing any of the following optional fields:
   * `baseUrl` the base URL for relative links.
   * `showProgressBar` enable an ASCII progress bar.
+  * `timeout` timeout in [zeit/ms](https://www.npmjs.com/package/ms) format. (e.g. `"2000ms"`, `20s`, `1m`). Default `10s`.
   * `httpHeaders` to apply URL specific headers, see example below.
   * `ignorePatterns` an array of objects holding regular expressions which a link is checked against and skipped for checking in case of a match. Example: `[{ pattern: /foo/ }]`
-  * `replacementPatterns` an array of objects holding regular expressions which are replaced in a link with their corresponding replacement string. This behavior allows (for example) to adapt to certain platform conventions hosting the Markdown. Example: `[{ pattern: /^.attachments/, replacement: "file://some/conventional/folder/.attachments" }]`
+  * `replacementPatterns` an array of objects holding regular expressions which are replaced in a link with their corresponding replacement string. This behavior allows (for example) to adapt to certain platform conventions hosting the Markdown. The special replacement `{{BASEURL}}` can be used to dynamically link to the base folder (used from `projectBaseUrl`) (for example that `/` points to the root of your local repository). Example: `[{ pattern: /^.attachments/, replacement: "file://some/conventional/folder/.attachments" }, { pattern: ^/, replacement: "{{BASEURL}}/"}]`
+  * `projectBaseUrl` the URL to use for `{{BASEURL}}` replacement
   * `ignoreDisable` if this is `true` then disable comments are ignored.
+  * `retryOn429` if this is `true` then retry request when response is an HTTP code 429 after the duration indicated by `retry-after` header.
+  * `retryCount` the number of retries to be made on a 429 response. Default `2`.
+  * `fallbackRetryDelay` the delay in [zeit/ms](https://www.npmjs.com/package/ms) format. (e.g. `"2000ms"`, `20s`, `1m`) for retries on a 429 response when no `retry-after` header is returned or when it has an invalid value. Default is `60s`.
+  * `aliveStatusCodes` a list of HTTP codes to consider as alive.
+    Example: `[200,206]`
 * `callback` function which accepts `(err, results)`.
   * `err` an Error object when the operation cannot be completed, otherwise `null`.
   * `results` an array of objects with the following properties:
@@ -108,34 +131,35 @@ If not supplied, the tool reads from standard input.
 
 #### Check links from a markdown file hosted on the web
 
-    markdown-link-check https://github.com/tcort/markdown-link-check/blob/master/README.md
+```shell
+markdown-link-check https://github.com/tcort/markdown-link-check/blob/master/README.md
+```
 
 #### Check links from a local markdown file
 
-    markdown-link-check ./README.md
+```shell
+markdown-link-check ./README.md
+```
 
 #### Check links from a local markdown folder (recursive)
 
-    find . -name \*.md -exec markdown-link-check {} \;
-
-#### Check links from standard input
-
-    cat *.md | markdown-link-check
+```shell
+find . -name \*.md -exec markdown-link-check {} \;
+```
 
 #### Usage
 
-```
+```shell
+Usage: markdown-link-check [options] [filenameOrUrl]
 
-  Usage: markdown-link-check [options] [filenameOrUrl]
-
-  Options:
-
-    -p, --progress         show progress bar
-    -c, --config [config]  apply a configuration file (JSON)
-    -q, --quiet            display errors only
-    -v, --verbose          displays detailed error information 
-    -h, --help             output usage information
-
+Options:
+  -p, --progress         show progress bar
+  -c, --config [config]  apply a config file (JSON), holding e.g. url specific header configuration
+  -q, --quiet            displays errors only
+  -v, --verbose          displays detailed error information
+  -a, --alive <code>     comma separated list of HTTP code to be considered as alive
+  -r, --retry            retry after the duration indicated in 'retry-after' header when HTTP code is 429
+  -h, --help             display help for command
 ```
 
 ##### Config file format
@@ -143,41 +167,55 @@ If not supplied, the tool reads from standard input.
 `config.json`:
 
 * `ignorePatterns`: An array of objects holding regular expressions which a link is checked against and skipped for checking in case of a match.
-* `replacementPatterns`: An array of objects holding regular expressions which are replaced in a link with their corresponding replacement string. This behavior allows (for example) to adapt to certain platform conventions hosting the Markdown.
+* `replacementPatterns`: An array of objects holding regular expressions which are replaced in a link with their corresponding replacement string. This behavior allows (for example) to adapt to certain platform conventions hosting the Markdown. The special replacement `{{BASEURL}}` can be used to dynamically link to the current working directory (for example that `/` points to the root of your current working directory).
 * `httpHeaders`: The headers are only applied to links where the link **starts with** one of the supplied URLs in the `urls` section.
+* `timeout` timeout in [zeit/ms](https://www.npmjs.com/package/ms) format. (e.g. `"2000ms"`, `20s`, `1m`). Default `10s`.
+* `retryOn429` if this is `true` then retry request when response is an HTTP code 429 after the duration indicated by `retry-after` header.
+* `retryCount` the number of retries to be made on a 429 response. Default `2`.
+* `fallbackRetryDelay` the delay in [zeit/ms](https://www.npmjs.com/package/ms) format. (e.g. `"2000ms"`, `20s`, `1m`) for retries on a 429 response when no `retry-after` header is returned or when it has an invalid value. Default is `60s`.
+* `aliveStatusCodes` a list of HTTP codes to consider as alive.
 
 **Example:**
 
+```json
+{
+  "ignorePatterns": [
     {
-        "ignorePatterns": [
-            {
-                "pattern": "^http://example.net"
-            }
-        ],
-        "replacementPatterns": [
-            {
-                "pattern": "^.attachments",
-                "replacement": "file://some/conventional/folder/.attachments"
-            }
-        ],
-        "httpHeaders": [
-            {
-                "urls": [
-                    "https://example.com"
-                ],
-                "headers": {
-                    "Authorization": "Basic Zm9vOmJhcg==",
-                    "Foo": "Bar"
-                }
-            }
-        ]
+      "pattern": "^http://example.net"
     }
-
-
+  ],
+  "replacementPatterns": [
+    {
+      "pattern": "^.attachments",
+      "replacement": "file://some/conventional/folder/.attachments"
+    },
+    {
+      "pattern": "^/",
+      "replacement": "{{BASEURL}}/"
+    }
+  ],
+  "httpHeaders": [
+    {
+      "urls": ["https://example.com"],
+      "headers": {
+        "Authorization": "Basic Zm9vOmJhcg==",
+        "Foo": "Bar"
+      }
+    }
+  ],
+  "timeout": "20s",
+  "retryOn429": true,
+  "retryCount": 5,
+  "fallbackRetryDelay": "30s",
+  "aliveStatusCodes": [200, 206]
+}
+```
 
 ## Testing
 
-    npm test
+```shell
+npm test
+```
 
 ## License
 

@@ -11,9 +11,8 @@ This is a test file:
 * [basic-auth](%%BASE_URL%%/basic-auth) (alive)
 * [ignored](%%BASE_URL%%/something/not-working-and-ignored/something) (ignored)
 * [replaced](%%BASE_URL%%/boo/bar)
-* [missing reference (no name)]
-* [missing reference (implicit)][]
-* [missing reference (explicit)][reference]
+* [later](%%BASE_URL%%/later)
+* [partial](%%BASE_URL%%/partial)
 
 ![img](%%BASE_URL%%/hello.jpg) (alive)
 ![img](hello.jpg) (alive)
@@ -27,5 +26,3 @@ Here are some invalid protocols:
 
 * [hhttppss](hhttppss://example.org)
 * [applesauce](applesauce://example.org)
-
-[unused reference]: unused
